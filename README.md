@@ -26,7 +26,7 @@ folder "super_fbpconvnet":
 2. SUPER-FCN-ULTRA:
 - train: main_train_fbpconvnetultra.m
 - test:  evaluation_fbpconvnetultra.m
-3. standalone fbpconvnet and Sequential Supervised Networks:
+3. Sequential fbpconvnet:
 - train: main_train_successivefcn.m
 - test:  evaluation_successivefcn.m
 4. SUPER-FCN-DataTermOnly:
