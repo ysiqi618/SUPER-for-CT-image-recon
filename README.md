@@ -38,10 +38,10 @@ folder "super_fbpconvnet":
 
 ## Citation
 
-@unpublished{SUPER-as-submit,
-title={Unified Supervised-Unsupervised ({SUPER}) Learning for {X-ray CT} Image Reconstruction},
-author={S. Ye and Z. Li and M. T. McCann and Y. Long and S. Ravishankar},
-note={IEEE Trans. Med. Imag., 2020. Submitted}
+@unpublished{SUPER-as-submit, \<br> 
+  title={Unified Supervised-Unsupervised (SUPER) Learning for X-ray CT Image Reconstruction}, \<br> 
+  author={S. Ye and Z. Li and M. T. McCann and Y. Long and S. Ravishankar},\<br> 
+  note={IEEE Trans. Med. Imag., 2020. Submitted}\<br> 
 }
 
 
