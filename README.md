@@ -13,7 +13,7 @@ folder "super_wavresnet":
 2. SUPER-WRN-ULTRA:
 - train: main_train_wrsULTRA_6pat_nufft.m
 - test: test_mytrain_mayo_wavULTRA_l2normReg_nufft.m
-3. standalone WavResNet and Sequential Supervised Networks:
+3. standalone WavResNet (based on [1]) and Sequential Supervised Networks:
 - train: main_train_wrs_6pat_nufft.m
 - test: test_mytrain_rnn_mayo_nufft.m 
 
@@ -36,8 +36,20 @@ folder "super_fbpconvnet":
 - train: main_train_fbpconvnet.m
 - test:  evaluation_fbpconvnet.m
 
+## Citation
+
+@unpublished{SUPER-as-submit,
+title={Unified Supervised-Unsupervised ({SUPER}) Learning for {X-ray CT} Image Reconstruction},
+author={S. Ye and Z. Li and M. T. McCann and Y. Long and S. Ravishankar},
+note={IEEE Trans. Med. Imag., 2020. Submitted}
+}
+
+
 ## References
 1. https://github.com/jongcye/deeplearningLDCT
 2. https://github.com/panakino/FBPConvNet
 
+
+If you have any problems in using it, please contact 
+yesiqi@sjtu.edu.cn and zhipengli@sjtu.edu.cn
  
