@@ -1,4 +1,4 @@
- function [xs, info] = pwls_ep_os_rlalm_l2normReg(x, A, yi, R, mu_para, jjj, varargin)
+ function [xs, info] = pwls_ep_os_rlalm_l2normReg(x, A, yi, R, mu, varargin)
 %function [xs, info] = ir_pwls_os_rlalm(x, Ab, yi, R, [options])
 %|
 %| penalized weighted least squares estimation / image reconstruction
@@ -80,7 +80,9 @@ if isempty(wi)
 	wi = ones(size(yi));
 end
 if isempty(arg.aai)
+% 	arg.aai = reshape(sum(abs(Ab)'), size(yi)); % a_i = sum_j |a_ij|
 	arg.aai = reshape(sum(Ab'), size(yi)); % a_i = sum_j |a_ij|
+
 end
 
 % check input sinogram sizes for OS
@@ -140,7 +142,6 @@ end
 [nb na] = size(yi);
 
 x = x(:);
-xinit = x;
 np = length(x);
 xs = zeros(np, length(arg.isave), 'single');
 if any(arg.isave == 0)
@@ -168,22 +169,30 @@ h = denom .* x - zeta;
 info = struct('cost',[], 'RMSE',[], 'relE',[], 'SSIM', [], 'PSNR', []);
 xtrue_msk = arg.xtrue(:);
 SqrtPixNum = sqrt(numel(arg.mask));
+xinit = x;
 % iterate
+if isempty(arg.xtrue) ~= true
+     info.RMSE(:,1) = norm(x - xtrue_msk) / SqrtPixNum;
+     %disp(['RMSE = ', num2str(info.RMSE(:,iter))]);  
+     info.SSIM(:,1)= ssim(reshape(x,512,512), arg.xtrue);
+     info.PSNR(:,1) = computeRegressedSNR(reshape(x,512,512),arg.xtrue);
+     fprintf(sprintf('RMSE=%g, SSIM = %g, PSNR = %g\n', info.RMSE(:,1),info.SSIM(:,1),info.PSNR(:,1)));  
+end  
+
 for iter = 1:arg.niter
 	%ticker(mfilename, iter, arg.niter)
-  if jjj == 1
+
      fprintf('%dth iteration of %d :\n', iter, arg.niter)
-  end
+
   xold = x;
 	relax = relax0 / (1 + relax_rate * (iter-1));
+  if arg.chat   
+     df = .5 * sum(col(wi) .* (Ab * x - col(yi)).^2, 'double');
+     rp = R.penal(R, x);
+     fprintf('df = %g, rp = %g\n',df, rp); 
+     info.cost(:,1) = df + rp;
+  end
 
-  if isempty(arg.xtrue) ~= true
-     info.RMSE(:,iter) = norm(x - xtrue_msk) / SqrtPixNum;
-     %disp(['RMSE = ', num2str(info.RMSE(:,iter))]);  
-     info.SSIM(:,iter)= ssim(reshape(x,512,512), arg.xtrue);
-     info.PSNR(:,iter) = computeRegressedSNR(reshape(x,512,512),arg.xtrue);
-     %disp(['SSIM = ', num2str(info.SSIM(:,iter))]);  
-  end  
   
 	% loop over subsets
 	for iset = 1:nblock
@@ -192,8 +201,8 @@ for iter = 1:arg.niter
 		num = rho(k) * (denom .* x - h) + (1-rho(k)) * g;
 		den = rho(k) * denom;
 		if ~isempty(R)
-			num = num + R.cgrad(R, x) + 2 * mu_para * (x - xinit);
-			den = den + R.denom(R, x) + 2 * mu_para;
+			num = num + R.cgrad(R, x) + 2 * mu * (x - xinit);
+			den = den + R.denom(R, x) + 2 * mu;
 		end
 		x = x - relax * num ./ den;
 		x = max(x, pixmin);
@@ -216,7 +225,7 @@ for iter = 1:arg.niter
 		g = (rho(k) * (alpha * zeta + (1-alpha) * g) + g) / (rho(k)+1);
 		h = alpha * (denom .* x - zeta) + (1-alpha) * h;
 
-  end
+        end
   
 
 	if any(arg.isave == iter)
@@ -225,18 +234,27 @@ for iter = 1:arg.niter
 
   if arg.chat   
      df = .5 * sum(col(wi) .* (Ab * x - col(yi)).^2, 'double');
-     fprintf('df = %g\n', df); 
+     fprintf('df = %g, ', df); 
      rp = R.penal(R, x);
-     fprintf('rp = %g\n', rp); 
-	   info.cost(:,iter) = df + rp;
+     fprintf('rp = %g, ', rp); 
+     zp = mu*(norm(x - xinit))^2;
+     fprintf('zp = %g\n', zp);
+	   info.cost(:,iter+1) = df + rp + zp;
   end
 
+  if isempty(arg.xtrue) ~= true
+     info.RMSE(:,iter+1) = norm(x - xtrue_msk) / SqrtPixNum;
+     %disp(['RMSE = ', num2str(info.RMSE(:,iter))]);  
+     info.SSIM(:,iter+1)= ssim(reshape(x,512,512), arg.xtrue);
+     info.PSNR(:,iter+1) = computeRegressedSNR(reshape(x,512,512),arg.xtrue);
+     fprintf(sprintf('RMSE=%g, SSIM = %g, PSNR = %g\n', info.RMSE(:,iter+1),info.SSIM(:,iter+1),info.PSNR(:,iter+1)));  
+  end  
 
   info.relE(:,iter) = norm(xold - x) / norm(x);   
   %disp(['RelE = ', num2str( info.relE(:,iter))]);
 
 
-  figure(20), imshow( embed(x, arg.mask), [800 1200]); 
+ % figure(20), imshow( embed(x, arg.mask), [800 1200]); 
 end
 
 
