@@ -5,6 +5,7 @@ get the IRT https://web.eecs.umich.edu/~fessler/code/ unzip in to ./irt (the roo
 http://www.vlfeat.org/matconvnet/install/#compiling and http://www.vlfeat.org/matconvnet/install/, install to the root folder of this project.
 ## trained models 
 Trained models are included in the root folder "trained_model".
+
 ## Code: SUPER with WavResNet #############
 folder "super_wavresnet":
 1. SUPER-WRN-EP:
@@ -36,18 +37,23 @@ folder "super_fbpconvnet":
 - train: main_train_fbpconvnet.m
 - test:  evaluation_fbpconvnet.m
 
-## Citation
+## Code: Standalone Unsupervised Methods (based on [3]):
+1. PWLS-EP: main_fan_pwls_ep_nufft.m
+2. PWLS-ULTRA: main_fan_pwls_ultra_nufft.m
 
-@unpublished{SUPER-as-submit, \
+## Citation
+@article{SUPER:20:TMI, \
   title={Unified Supervised-Unsupervised (SUPER) Learning for X-ray CT Image Reconstruction}, \
   author={S. Ye and Z. Li and M. T. McCann and Y. Long and S. Ravishankar},\
-  note={IEEE Trans. Med. Imag., 2020. Submitted}\
+  journal={arXiv preprint arXiv:2010.02761},
+  year={2020}
 }
 
 
 ## References
 1. https://github.com/jongcye/deeplearningLDCT
 2. https://github.com/panakino/FBPConvNet
+3. https://github.com/xuehangzheng/PWLS-ULTRA-for-Low-Dose-3D-CT-Image-Reconstruction
 
 
 If you have any problems in using it, please contact 
