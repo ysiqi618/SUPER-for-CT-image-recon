@@ -32,6 +32,12 @@ folder "super_fbpconvnet":
 4. SUPER-FCN-DataTermOnly:
 - train: main_train_fbpconvnetnoreg.m
 - test:  evaluation_fbpconvnet_dataterm.m
+5. standalone FBPConvNet (based on [2]):
+- train: main_train_fbpconvnet.m
+- test:  evaluation_fbpconvnet.m
 
+## References
+1. https://github.com/jongcye/deeplearningLDCT
+2. https://github.com/panakino/FBPConvNet
 
  
