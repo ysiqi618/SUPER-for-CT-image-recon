@@ -1,9 +1,8 @@
 # SUPER-for-CT-recon
-## Install MIRT toolbox ############
-get the IRT https://web.eecs.umich.edu/~fessler/code/ unzip in to ./irt (the root folder of this project).
-## Install MatConvNet #############
-http://www.vlfeat.org/matconvnet/install/#compiling and http://www.vlfeat.org/matconvnet/install/, install to the root folder of this project.
-## trained models 
+## Installation  ############
+1. MIRT toolbox: get the IRT https://web.eecs.umich.edu/~fessler/code/ unzip in to ./irt (the root folder of this project).
+2. Install MatConvNet: check http://www.vlfeat.org/matconvnet/install/#compiling and http://www.vlfeat.org/matconvnet/install/, install to the root folder of this project.
+## Trained models 
 Trained models are included in the root folder "trained_model".
 
 ## Code: SUPER with WavResNet #############
