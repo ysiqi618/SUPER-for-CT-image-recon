@@ -5,6 +5,9 @@
 ## Trained models 
 Trained models are included in the root folder "trained_model".
 
+## Data
+We used "2016 NIH AAPM-Mayo Clinic Low Dose CT Grand Challenge" data (https://www.aapm.org/grandchallenge/lowdosect/#patientData) in our experiments. The code to extract regular-dose images from the dataset is given in 'data/read_mayo_IMA.m'. The code to generate our low-dose test data is 'data/test_data_maker.m'.
+
 ## Code: SUPER with WavResNet #############
 folder "super_wavresnet":
 1. SUPER-WRN-EP:
