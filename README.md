@@ -6,7 +6,9 @@
 The pre-trained ULTRA model, trained models of SUPER-WRN-EP, SUPER-WRN-ULTRA, seq-WRN, and the standalone WavResNet are included in the root folder "trained_model".
 
 ## Data
-We used "2016 NIH AAPM-Mayo Clinic Low Dose CT Grand Challenge" data (https://www.aapm.org/grandchallenge/lowdosect/#patientData) in our experiments. The code to extract regular-dose images from the dataset is given in 'data/read_mayo_IMA.m'. The code to generate our low-dose test data is 'data/test_data_maker.m'.
+We used 3mm thickness images from "2016 NIH AAPM-Mayo Clinic Low Dose CT Grand Challenge" data (https://www.aapm.org/grandchallenge/lowdosect/#patientData) in our experiments. 
+- The code to extract regular-dose images from the dataset is given in 'data/read_mayo_IMA.m'. 
+- The code to generate our low-dose test data is 'data/test_data_maker.m'.
 
 ## Code: SUPER with WavResNet #############
 folder "super_wavresnet":
@@ -51,12 +53,13 @@ folder "super_fbpconvnet":
   year={2020}
 }
 
-
 ## References
 1. https://github.com/jongcye/deeplearningLDCT
 2. https://github.com/panakino/FBPConvNet
 3. https://github.com/xuehangzheng/PWLS-ULTRA-for-Low-Dose-3D-CT-Image-Reconstruction
 
+## Acknowledgement
+The authors thank Dr. Cynthia McCollough, the Mayo Clinic, the American Association of Physicists in Medicine, and the National Institute of Biomedical Imaging and Bioengineering for providing the Mayo Clinic data.
 
 If you have any problems in using it, please contact 
 yesiqi@sjtu.edu.cn and zhipengli@sjtu.edu.cn
