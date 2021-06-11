@@ -3,7 +3,7 @@
 1. MIRT toolbox: get the IRT https://web.eecs.umich.edu/~fessler/code/ unzip in to ./irt (the root folder of this project).
 2. Install MatConvNet: check http://www.vlfeat.org/matconvnet/install/#compiling and http://www.vlfeat.org/matconvnet/install/, install to the root folder of this project.
 ## Trained models 
-Trained models are included in the root folder "trained_model".
+The pre-trained ULTRA model, trained models of SUPER-WRN-EP, SUPER-WRN-ULTRA, seq-WRN, and the standalone WavResNet are included in the root folder "trained_model".
 
 ## Data
 We used "2016 NIH AAPM-Mayo Clinic Low Dose CT Grand Challenge" data (https://www.aapm.org/grandchallenge/lowdosect/#patientData) in our experiments. The code to extract regular-dose images from the dataset is given in 'data/read_mayo_IMA.m'. The code to generate our low-dose test data is 'data/test_data_maker.m'.
