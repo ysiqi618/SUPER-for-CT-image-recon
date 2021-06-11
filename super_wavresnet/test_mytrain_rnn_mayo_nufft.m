@@ -2,31 +2,37 @@
 %|- for standalone WavResNet: num_epoch=200, Layer=1, wrn_stand=1
 %|- for sequential WavResNet: num_epoch=50, Layer=15, wrn_stand=0
 %| Ye siqi, UM-SJTU JI, Shanghai Jiao Tong Univ.
-%| 2020-05
+%| 2021-05
 
 clear all;
 close all;
 %addpath('~/exportfig');
 %% Path setting
- run '../irt/setup.m';
-gpuIdx = gpuDevice(1);
+  run 'irt/setup.m';
+% gpuIdx = gpuDevice(2);
 
 run('~/matconvnet-1.0-beta24/matlab/vl_setupnn.m'); % MatConvNet path
- addpath(genpath('~/SUPER-for-CT-recon/'));
-%addpath(genpath('../toolbox/'));
-%addpath(genpath('./lib_contourlet/'));
-wrn_stand = 1; % standalone or sequential
+addpath(genpath('~/SUPER-for-CT-recon/'));
+%  addpath(genpath('/home/share/SUPER/github-code/toolbox/'));
+%  addpath(genpath('/home/share/SUPER/github-code/trained_model'));
+% 
+datafolder = 'data/';
+wrn_stand = 0; % standalone (=1) or sequential (=0)
+
+%%
 if wrn_stand == 1
- netpath = 'trained_model/wavresnet_standalone/';
-% savepath = 'pureWRN_mm2HU/nufft_6pat_lr-5_imgs500_PatSz256_Overlap10_BatSz1_WgtDecay1e-02_GradMax1e-03';
-savepath = 'wavresnet/';
+    netpath = 'trained_model/wavresnet_standalone/';
+    savepath = 'wavresnet/';
+    num_epoch = 200;              % the number of epochs
+    Layer = 1; 
 else
- netpath = 'trained_model/wavresnet_sequential/';
-% savepath = 'pureWRN_rnn/preLyrInit_nufft_6pat_lr-5_imgs500_PatSz256_Overlap10_BatSz1_WgtDecay1e-02_GradMax1e-03';
-savepath = 'wrn_seq/';
+    netpath = 'trained_model/wavresnet_sequential/';
+    savepath = 'wrn_seq/';
+    num_epoch = 50;              % the number of epochs
+    Layer = 15;
 end
 if ~exist(savepath,'dir') mkdir(savepath); end
-%% target geometry for compute RMSE and SSIM
+%% geometry setting
 down = 1; % downsample rate
 sg = sino_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
      'strip_width','ds','dsd',1085.6,'dso',595,'dfs',0, 'down', down);
@@ -39,7 +45,7 @@ dflt                = 'vk';                 % filter name for the directional de
 patchsize           = 256; %30;                   % the size of patch
 batchsize           = 1;                   % the size of batch
 wgt                 = 1e3;                  % weight multiplied to input
-num_epoch           = 200; %50; % 120;                  % the number of epochs
+% num_epoch           = 200; %50; % 120;                  % the number of epochs
 lr_rate             = [-2 -5];% [-2 -5];              % learing rate scheduling from 1e-2 to 1e-5
 num_lr_epoch        = num_epoch;            
 wgtdecay            = 1e-2;                 % weight decay parameter
@@ -51,8 +57,6 @@ train               = struct('gpus', gpus);
 % expdir              = 'training_1';         % experiment name
 % if ~exist(expdir, 'dir'), mkdir(expdir); end;
 method = 'residual';
-Layer = 1; % 15;
-% lambda = 1 ; %0.5 for parallel super
 overlap = 10; %5;
 %% Denoising module: wavresnet or fbpconvnet
 hu2inten = @(x) x./(1000/0.0192);
@@ -65,8 +69,8 @@ printm('load testing data ... \n');
 caselist = {'L067','L143','L192','L310'};
 for ilist = 1:length(caselist) % 7:10; %1:3
         study = caselist{ilist};
-        load(['~/Desktop/MayoData_gen/' study  '/full_3mm_img.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/xfbp.mat']);
+        load([datafolder study  '/full_3mm_img.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/xfbp.mat']);
 
     for ii =1:length(test_slice)
             xfbp_low = xfbp(:,:,test_slice(ii));
@@ -103,7 +107,7 @@ for ilist = 1:length(caselist) % 7:10; %1:3
         xfbp_low = hu2inten(xrla);
 
     end
-    save([savepath '/test_1e4/' study sprintf('s%d_epoch%d_Layer%d.mat',test_slice(ii),num_epoch,Layer)],'info_val');
+    save([savepath study sprintf('s%d_epoch%d_Layer%d.mat',test_slice(ii),num_epoch,Layer)],'info_val');
 	clear info_val
     end
 

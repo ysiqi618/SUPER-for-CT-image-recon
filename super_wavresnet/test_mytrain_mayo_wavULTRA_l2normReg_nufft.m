@@ -4,15 +4,16 @@ clear all;
 close all;
 
 %% Path setting
- run '../irt/setup.m';
+ run 'irt/setup.m';
 % gpuIdx = gpuDevice(2);
 
 run('~/matconvnet-1.0-beta24/matlab/vl_setupnn.m'); % MatConvNet path
  addpath(genpath('~/SUPER-for-CT-recon/'));
-%addpath(genpath('../toolbox/'));
-%addpath(genpath('./lib_contourlet/'));
-% addpath(genpath('~/exportfig'));
-%% target geometry for compute RMSE and SSIM
+%  addpath(genpath('/home/share/SUPER/github-code/toolbox/'));
+%  addpath(genpath('/home/share/SUPER/github-code/trained_model'));
+% 
+datafolder = 'data/';
+%% geometry setting
 down = 1; % downsample rate
 sg = sino_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
      'strip_width','ds','dsd',1085.6,'dso',595,'dfs',0, 'down', down);
@@ -47,7 +48,7 @@ inten2hu = @(x) x.*(1000/0.0192);
 
 %%
 printm 'load transforms ...'
-load('Learned_ULTRA/mayo_18s6patSort_block5_iter1000_gamma125_31l0.mat');
+load('trained_model/ULTRA_mayo_18s6patSort_block5_iter1000_gamma125_31l0.mat');
 mOmega = info.mOmega; clear info;
 vLambda = [];
 for k = 1:size(mOmega, 3)
@@ -95,12 +96,12 @@ caselist = {'L067','L143','L192','L310'}; % 'L067'
 layerStart = 0;
 for ilist = 1:length(caselist) % 7:10; %1:3
         study = caselist{ilist};
-        load(['~/Desktop/MayoData_gen/' study  '/full_3mm_img.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/xfbp.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/kappa.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/denom.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/sino.mat']);
-        load(['~/Desktop/MayoData_gen/' study  '/sim_low_nufft_1e4/wi.mat']);
+       load([datafolder study  '/full_3mm_img.mat']);
+        load([datafolder study '/sim_low_nufft_1e4/xfbp.mat']);
+        load([datafolder study '/sim_low_nufft_1e4/sino.mat']);
+        load([datafolder study '/sim_low_nufft_1e4/wi.mat']);
+        load([datafolder study '/sim_low_nufft_1e4/denom.mat']);
+        load([datafolder study '/sim_low_nufft_1e4/kappa.mat']);
   
     
     for itestlist = 1:length(testlist)
