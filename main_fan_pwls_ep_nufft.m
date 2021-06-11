@@ -2,9 +2,10 @@
 
 clear ; close all; 
 addpath(genpath('~/Desktop/toolbox'));
-run '~/irt2020/setup.m';
-addpath(genpath('~/Desktop/exportfig'));
-
+run 'irt/setup.m';
+% addpath(genpath('~/Desktop/exportfig'));
+datafolder = 'data/';
+savepath = 'pwls-ep/1e4/';
 %% setup target geometry and weight
 down = 1; % downsample rate
 sg = sino_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
@@ -27,12 +28,12 @@ printm('load testing data ... \n');
 caselist = {'L067','L143','L192','L310'};
 for ilist = 1:length(caselist) % 7:10; %1:3
         study = caselist{ilist};
-        load(['/home/share/MayoData_gen/' study  '/full_3mm_img.mat']);
-        load(['/home/share/MayoData_gen/' study  '/sim_low_nufft_1e4/xfbp.mat']);
-        load(['/home/share/MayoData_gen/' study  '/sim_low_nufft_1e4/sino.mat']);
-        load(['/home/share/MayoData_gen/' study  '/sim_low_nufft_1e4/wi.mat']);
-        load(['/home/share/MayoData_gen/' study  '/sim_low_nufft_1e4/denom.mat']);
-        load(['/home/share/MayoData_gen/' study  '/sim_low_nufft_1e4/kappa.mat']);
+        load([datafolder study  '/full_3mm_img.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/xfbp.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/sino.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/wi.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/denom.mat']);
+        load([datafolder study  '/sim_low_nufft_1e4/kappa.mat']);
 
 
         for itest = 1:length(slice)
@@ -62,7 +63,7 @@ for ilist = 1:length(caselist) % 7:10; %1:3
             info.xx = xrlalm;
             % save(sprintf('PWLS-EP/1e4/L067_Slice%d_l2b%d_del%d_iter%d.mat',sample,l2b,delta,nIter),'info');
             % save(sprintf('PWLS-EP/1e4/L192_Slice%d_l2b%d_del%d_iter%d.mat',sample,l2b,delta,nIter),'info');
-            save(['pwls-ep-nufft/1e4/' study sprintf('_s%d_l2b%d_del%d_iter%d.mat',sample,l2b,delta,nIter)],'info');
+            save([savepath study sprintf('_s%d_l2b%d_del%d_iter%d.mat',sample,l2b,delta,nIter)],'info');
             
             end
 end

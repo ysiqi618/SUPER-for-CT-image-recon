@@ -1,16 +1,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Ye Siqi, UM-SJTU Joint Institute
 clear ; close all;
-run '~/irt2020/setup.m';
-addpath(genpath('~/exportfig'));
+run 'irt/setup.m';
 
-addpath(genpath('~/exportfig'));
-addpath(genpath('~/Desktop/toolbox'));
-addpath(genpath('/home/share/MayoData_gen/'));
+addpath(genpath('toolbox'));
+datafolder = 'data/';
+addpath(genpath('exportfig/')); % for save figures
 %% setup target geometry and weight
 down = 1; % downsample rate
-sg = sino_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
-     'strip_width','ds','dsd',1085.6,'dso',595,'dfs',0, 'down', down);
+sg = sino_low_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
+     'strip_wi_lowdth','ds','dsd',1085.6,'dso',595,'dfs',0, 'down', down);
 mm2HU = 1000 / 0.0192;
 % ig = image_geom('nx', 512, 'dx', 500/512);
 ig = image_geom('nx',512,'fov',sg.rfov*sqrt(2)); % dx=0.69298mm, fov=354.8065mm
@@ -23,7 +22,7 @@ dose = '1e4'; % I0, photon intensity
 snappath = ['pwls-ultra-nufft/' dose '/snapshot/'];
 if ~exist(snappath,'dir') mkdir(snappath); end
 % load('Learned_ULTRA/mayo_18s6pat_block5_iter1000_gamma125_31l0.mat');
-load('Learned_ULTRA/mayo_18s6patSort_block5_iter1000_gamma125_31l0.mat');
+load('trained_model/ULTRA_mayo_18s6patSort_block5_iter1000_gamma125_31l0.mat');
 mOmega = info.mOmega; clear info;
 %% setup edge-preserving regularizer
 ImgSiz =  [ig.nx ig.ny];  % image size
@@ -56,24 +55,29 @@ printm('load testing data ... \n');
 caselist = {'L067','L143','L192','L310'};
 for ilist = 1:length(caselist) % 7:10; %1:3
         study = caselist{ilist};
-        fprintf(['start ' study '...\n']);
-        load(['dataset/test_nufft_' dose '/' study '.mat']);
- for itest = 1:size(xfbp_low,3)
+	load([datafolder study  '/full_3mm_img.mat']);
+       load([datafolder study  '/sim_low_nufft_1e4/xfbp.mat']);
+       load([datafolder study  '/sim_low_nufft_1e4/sino.mat']);
+       load([datafolder study  '/sim_low_nufft_1e4/wi.mat']);
+       load([datafolder study  '/sim_low_nufft_1e4/denom.mat']);
+       load([datafolder study  '/sim_low_nufft_1e4/kappa.mat']);  
+      fprintf(['start ' study '...\n']);
+  for itest = 1:size(xfbp_low,3)
         sample = slice(itest);
-        xref = xtrue(:,:,itest);
-        xrlalm = xfbp_low(:,:,itest);
-        kappa = single(kappa_low(:,:,itest));
-        denom = denom_low(:,:,itest);
-        sino = sino_low(:,:,itest);
-        wi = wi_low(:,:,itest);
-        % load([dir '/kappa_low_low.mat']);
-         KapPatch = im2colstep(kappa, PatSiz, SldDist); clear kappa;
+        xref = xfdk(:,:,itest);
+        xrlalm = xfbp(:,:,itest);
+        kappa_low = single(kappa(:,:,itest));
+        denom_low = denom(:,:,itest);
+        sino_low = sino(:,:,itest);
+        wi_low = wi(:,:,itest);
+        % load([dir '/kappa_low_low_low.mat']);
+         KapPatch = im2colstep(kappa_low, PatSiz, SldDist); clear kappa_low;
          KapPatch = mean(KapPatch,1);
          %         KapPatch = repmat(KapPatch, prod(PatSiz), 1);
          Kappa = col2imstep(single(repmat(KapPatch, prod(PatSiz), 1)), ImgSiz, PatSiz, SldDist);
        
          KapType = 1;
-        switch KapType
+        swi_lowtch KapType
             case 0  % no patch-based weighting
                 beta = 5e4;
                 gamma = 80;
@@ -122,8 +126,8 @@ for ilist = 1:length(caselist) % 7:10; %1:3
         info.PSNR(ii) = snr_rec;
 
         fprintf('Iteration = %d:\n', ii);
-        [xrla_msk, cost] = pwls_os_rlalm_l2normReg(xrla_msk, A, reshaper(sino, '2d'),  reshaper(wi, '2d'),...
-            R, denom, D_R, 0,'pixmax', pixmax, 'chat', 0, 'alpha', 1.999, 'rho', [],'niter', nIter);
+        [xrla_msk, cost] = pwls_os_rlalm_l2normReg(xrla_msk, A, reshaper(sino_low, '2d'),  reshaper(wi_low, '2d'),...
+            R, denom_low, D_R, 0,'pixmax', pixmax, 'chat', 0, 'alpha', 1.999, 'rho', [],'niter', nIter);
 
         [info.perc(:,ii),info.vIdx] = R.nextOuterIter();
         fprintf('perc = %g\n', info.perc(:,ii));
