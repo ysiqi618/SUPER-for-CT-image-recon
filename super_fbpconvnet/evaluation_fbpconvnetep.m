@@ -13,7 +13,7 @@ reset(gpuDevice)
 
 run('~/Desktop/irt/setup.m');
 run('/home/matconvnet-1.0-beta24/matlab/vl_setupnn.m');
-
+datafolder = '../data/';
 
 slice_index = 1;
 for sample = [20,50,100,150,200]
@@ -35,7 +35,7 @@ for sample = [20,50,100,150,200]
         SldDist = [1 1];         % sliding distance
         W = 512;
 
-        beta_recon = 15; % need to tune
+        beta_recon = 16; % need to tune
         delta_recon = 20; % need to tune
         mu_recon = 5e5;
         Iter = 15;
@@ -47,6 +47,10 @@ for sample = [20,50,100,150,200]
         %
         % load paired testing low dose and high dose images here
         %
+        load([datafolder patient{1} '/full_3mm_img.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/xfbp.mat']);
+        lab_n = xfdk;
+        lab_d = xfbp;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         lab_n = reshape(lab_n, W, W, 1, []);
         lab_d = reshape(lab_d, W, W, 1, []);
@@ -54,6 +58,10 @@ for sample = [20,50,100,150,200]
         %
         % load kappa, denom, sinograms, and weight matrices here
         %
+        load(['/home/share/MayoData_gen/' patient{1} '/sim_low_nufft_1e4/sino.mat']);
+        load(['/home/share/MayoData_gen/' patient{1} '/sim_low_nufft_1e4/wi.mat']);
+        load(['/home/share/MayoData_gen/' patient{1} '/sim_low_nufft_1e4/denom.mat']);
+        load(['/home/share/MayoData_gen/' patient{1} '/sim_low_nufft_1e4/kappa.mat']);  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         kappa = kappa(:,:,sample);
         denom = denom(:,:,sample);
@@ -78,6 +86,8 @@ for sample = [20,50,100,150,200]
             %
             % load pre-trained layer-wise neural networks here
             %
+            ttemp = strcat('../trained_model/super_fcn_ep/net-epoch-', num2str(iter) ,'.mat');
+            load(ttemp);  
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             if strcmp(cmode,'gpu')
@@ -143,8 +153,8 @@ for sample = [20,50,100,150,200]
         info = struct('xx',xx,'RMSE',CCC,'SSIM',DDD,'snr_m',snr_m,'snr_rec',snr_rec,'PSNR',PPP);
         display(['avg SNR (FBP) : ' num2str(mean(avg_psnr_m))])
         display(['avg SNR (FBPconvNet) : ' num2str(mean(avg_psnr_rec))])
-        save(sprintf('SUPEREP_l2normRegNufft_500slices_%sSlice%d_dose1e4_l2b%d_delta%d_testmu%d_nblock%d_nOuterIter%d.mat', ...
-            patient{1},sample,beta_recon, delta_recon, mu_recon, nblock, nOuterIter),'info');
+        %save(sprintf('SUPEREP_l2normRegNufft_500slices_%sSlice%d_dose1e4_l2b%d_delta%d_testmu%d_nblock%d_nOuterIter%d.mat', ...
+        %    patient{1},sample,beta_recon, delta_recon, mu_recon, nblock, nOuterIter),'info');
         
         x_record(:,:,slice_index) = temp;
         x_true(:,:,slice_index) = gt;
@@ -159,5 +169,5 @@ for sample = [20,50,100,150,200]
     end
 end
 summary = struct('x_record',x_record,'x_true',x_true,'value',value,'ini_value',ini_value);
-save('summary.mat','summary');
+%save('summary.mat','summary');
 

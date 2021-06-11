@@ -13,19 +13,22 @@ restoredefaultpath
 reset(gpuDevice)
 run('/home/matconvnet-1.0-beta24/matlab/vl_setupnn.m');
 run ~/Desktop/irt/setup.m
-
+addpath(genpath('../'))
+datafolder = '../data/';
 slice_index = 1;   
-for sample = [1,2,3,4,5]
+for sample = [20,50,100,150,200]
+%for sample = [100]
     for patient = {'L192','L143', 'L067', 'L310'}
         cmode='gpu'; % 'cpu'
              
         fprintf('%d th slice of patient %s \n',sample, patient{1})
-        addpath(genpath('~/Desktop/toolbox'))
+        addpath(genpath('../toolbox'))
         down = 1; % downsample rate
         sg = sino_geom('fan', 'units', 'mm', 'nb',736, 'na',1152,'orbit',360, 'ds',1.2858,...
              'strip_width','ds','dsd',1085.6,'dso',595,'dfs',0, 'down', down);
         mm2HU = 1000 / 0.0192;
-        ig = image_geom('nx',512,'fov',sg.rfov*sqrt(2)); 
+        % ig = image_geom('nx', 512, 'dx', 500/512);
+        ig = image_geom('nx',512,'fov',sg.rfov*sqrt(2)); % dx=0.69298mm, fov=354.8065mm
         %A = Gtomo2_dscmex(sg, ig, 'nthread', jf('ncore')*2); 
         A = Gtomo_nufft_new(sg, ig); 
         ImgSiz =  [ig.nx ig.ny];  % image size
@@ -48,29 +51,37 @@ for sample = [1,2,3,4,5]
         %
         % load pre-learned union of sparsifying transforms (mOmega) here
         %
+        load('../trained_model/ULTRA_mayo_18s6patSort_block5_iter1000_gamma125_31l0.mat');
+        mOmega = info.mOmega;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+        
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % load normal dose and low dose images here
         %
+        load([datafolder patient{1} '/full_3mm_img.mat'])
+        lab_n = xfdk;
+        load([datafolder patient{1} '/sim_low_1e4/xfbp.mat'])
+        lab_d = xfbp;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-         lab_n = xtrue(:,:,sample);
-         lab_d = xfbp_low(:,:,sample);
-         lab_n = reshape(lab_n, W, W, 1, []);
-         lab_d = reshape(lab_d, W, W, 1, []);
+
+        lab_n = reshape(lab_n, W, W, 1, []);
+        lab_d = reshape(lab_d, W, W, 1, []);
          
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % load kappa, denom, sinogram, and weight matrix here
         %
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-         kappa = kappa_low(:,:,sample);
-         denom = denom_low(:,:,sample);
-         sino = sino_low(:,:,sample);
-         wi = wi_low(:,:,sample);
+        load([datafolder patient{1} '/sim_low_1e4/denom.mat']);
+        load([datafolder patient{1} '/sim_low_1e4/kappa.mat']);
+        load([datafolder patient{1} '/sim_low_1e4/sino.mat']);
+        load([datafolder patient{1} '/sim_low_1e4/wi.mat']);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+        kappa = kappa(:,:,sample);
+        denom = denom(:,:,sample);
+        sino = sino(:,:,sample);
+        wi = wi(:,:,sample);
 
         avg_psnr_m=zeros(numel(sample),1);
         avg_psnr_rec=zeros(numel(sample),1);
@@ -87,32 +98,37 @@ for sample = [1,2,3,4,5]
         PP = im2colstep(ones(ImgSiz,'single'), PatSiz, SldDist);
         KK = col2imstep(single(PP), ImgSiz, PatSiz, SldDist);
 
-        KapPatch = im2colstep(single(kappa), PatSiz, SldDist); 
+        KapPatch = im2colstep(kappa, PatSiz, SldDist); 
         KapPatchh = mean(KapPatch,1);
         Kappa = col2imstep(single(repmat(KapPatchh, prod(PatSiz), 1)), ImgSiz, PatSiz, SldDist);
 
-        switch KapType
+            switch KapType
 
-            case 0 
-                D_R = 2 * beta_recon * KK(:) * maxLambda; 
-                R = Reg_OST(ig.mask, ImgSiz, PatSiz, SldDist, beta_recon, gamma_recon, mOmega, numBlock, CluInt);
+                case 0 
+                    D_R = 2 * beta_recon * KK(:) * maxLambda; 
+                    R = Reg_OST(ig.mask, ImgSiz, PatSiz, SldDist, beta_recon, gamma_recon, mOmega, numBlock, CluInt);
 
-            case 1  
-                Kappa_slice = Kappa;
-                D_R = 2 * beta_recon * Kappa_slice(:) * maxLambda;  
-                R = Reg_OST_Kappa(ig.mask, ImgSiz, PatSiz, SldDist, beta_recon, gamma_recon, KapPatchh, mOmega, numBlock, CluInt);
-        end
+                case 1  
+                    Kappa_slice = Kappa;
+                    D_R = 2 * beta_recon * Kappa_slice(:) * maxLambda;  
+                    % construct regularizer R(x)
+                    R = Reg_OST_Kappa(ig.mask, ImgSiz, PatSiz, SldDist, beta_recon, gamma_recon, KapPatchh, mOmega, numBlock, CluInt);
+            end
 
-        gt=lab_n;
+        clear kappa PP KK maxLambda Kappa 
+
+        gt=lab_n(:,:,1,sample);
         cost = [];
         for iter=1:Iter
             fprintf('Iter = %d \n',iter);
-            
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %
             % load pre-trained layer-wise neural networks here
             %
+            ttemp = strcat('../trained_model/super_fcn_ultra/net-epoch-', num2str(iter) ,'.mat');
+            load(ttemp); 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
 
             if strcmp(cmode,'gpu')
                 net = vl_simplenn_move(net, 'gpu') ;
@@ -120,7 +136,7 @@ for sample = [1,2,3,4,5]
                 net = vl_simplenn_move(net, 'cpu') ;
             end
             if iter == 1
-                m=lab_d;
+                m=lab_d(:,:,1,sample);
                 RMSE_orig = norm(m(:) - gt(:)) / SqrtPix;
                 SSIM_orig = ssim(m,gt);
                 fprintf('RMSE = %g, SSIM = %g \n', RMSE_orig, SSIM_orig);
@@ -133,16 +149,15 @@ for sample = [1,2,3,4,5]
                 rec=(res(end-1).x)+m;
             end
             temp = rec;
-            
+        %    fprintf('RMSE = %g, ', norm(rec(:) - gt(:)) / SqrtPix)
             xx(:,:,2*iter-1) = temp;
-            CCC(1,2*iter-1) = norm(rec(:) - gt(:)) / SqrtPix;
-            DDD(1,2*iter-1) = ssim(rec,gt);
-            PPP(1,2*iter-1) = computeRegressedSNR(rec,gt);
-            fprintf('RMSE = %g, SSIM = %g, PSNR = %g \n', CCC(1,2*iter-1), DDD(1,2*iter-1), PPP(1,2*iter-1));
-            
+           CCC(1,2*iter-1) = norm(rec(:) - gt(:)) / SqrtPix;
+           DDD(1,2*iter-1) = ssim(rec,gt);
+           PPP(1,2*iter-1) = computeRegressedSNR(rec,gt);
+           fprintf('RMSE = %g, SSIM = %g, PSNR = %g \n', CCC(1,2*iter-1), DDD(1,2*iter-1), PPP(1,2*iter-1));
             for iii = 1 : nOuterIter
                 fprintf('ULTRA Module %d of %d: \n', iii, nOuterIter);     
-                [xrla(:,iii) cost_tmp] = pwls_os_rlalm_l2normReg(temp(:), Ab, reshaper(sino, '2d'),  reshaper(wi, '2d'),...
+                [xrla(:,iii) cost_tmp] = pwls_ultra_os_rlalm_l2normReg(temp(:), Ab, reshaper(sino, '2d'),  reshaper(wi, '2d'),...
                 R, denom(:), D_R, mu_recon, 'pixmax', inf, 'chat', 1, 'alpha', 1.999, 'rho', [],'niter', nIter);
 
                 [perc, vIdx] = R.nextOuterIter();
@@ -157,16 +172,16 @@ for sample = [1,2,3,4,5]
             cost_ttmp = cost_tmp(1) + mu_recon * sum(col(xrla(:,nOuterIter) - rec(:)).^2);
             cost = [cost cost_ttmp];
             
-            CCC(1,2*iter) = BBB(1,nOuterIter);
-            DDD(1,2*iter) = EEE(1,nOuterIter);
-            PPP(1,2*iter) = FFF(1,nOuterIter);
+          CCC(1,2*iter) = BBB(1,nOuterIter);
+          DDD(1,2*iter) = EEE(1,nOuterIter);
+          PPP(1,2*iter) = FFF(1,nOuterIter);
             m = temp;
             xx(:,:,2*iter) = temp;   
 
-            snr_m=computeRegressedSNR(lab_d,gt);
+            snr_m=computeRegressedSNR(lab_d(:,:,1,sample),gt);
             snr_rec=computeRegressedSNR(temp,gt);
             figure(1), 
-            subplot(131), imshow(lab_d,[800 1200]),axis equal tight, title({'fbp';num2str(snr_m)})
+            subplot(131), imshow(lab_d(:,:,1,sample),[800 1200]),axis equal tight, title({'fbp';num2str(snr_m)})
             subplot(132), imshow(temp,[800 1200]),axis equal tight, title({'fbpconvnetultra';num2str(snr_rec)})
             subplot(133), imshow(gt,[800 1200]),axis equal tight, title(['gt ' num2str(iter)])
             pause(0.1)
@@ -180,8 +195,8 @@ for sample = [1,2,3,4,5]
         info = struct('xx',xx,'RMSE',CCC,'SSIM',DDD,'snr_m',snr_m,'snr_rec',snr_rec, 'perc',perc,'vIdx',vIdx,'PSNR',PPP,'cost',cost);
         display(['avg SNR (FBP) : ' num2str(mean(avg_psnr_m))])
         display(['avg SNR (FBPconvNet) : ' num2str(mean(avg_psnr_rec))])
-        save(sprintf('SUPERULTRA_l2normReg_nufft_500slices_%sSlice%d_MayoST_beta%d_gamma%d_mu%d_nblock%d_nIter%d_nOuterIter%d.mat', ...
-             patient{1},slice(sample),beta_recon, gamma_recon, mu_recon, nblock, nIter, nOuterIter),'info');
+        %save(sprintf('SUPERULTRA_l2normReg_nufft_500slices_%sSlice%d_Dose1e4_MayoST_beta%d_gamma%d_mu%d_nblock%d_nIter%d_nOuterIter%d.mat', ...
+        %    patient{1},sample,beta_recon, gamma_recon, mu_recon, nblock, nIter, nOuterIter),'info');
          
         x_record(:,:,slice_index) = temp;
         x_true(:,:,slice_index) = gt;
@@ -198,5 +213,5 @@ for sample = [1,2,3,4,5]
 end
 
 summary = struct('x_record',x_record,'x_true',x_true,'value',value,'ini_value',ini_value);
-save('summary_all_samples.mat','summary');
+%save('summary.mat','summary');
          

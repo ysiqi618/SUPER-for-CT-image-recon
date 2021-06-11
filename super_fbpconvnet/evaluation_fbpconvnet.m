@@ -7,23 +7,32 @@ clear; clc
 restoredefaultpath
 reset(gpuDevice(1))
 run('/home/matconvnet-1.0-beta24/matlab/vl_setupnn.m');
-
+datafolder = '../data/';
 slice_index = 1;
 W = 512;
 SqrtPix = 512;
+
+
 for sample = [20,50,100,150,200]
     for patient = {'L192','L143', 'L067', 'L310'}
         
         fprintf('%d th slice of patient %s \n',sample, patient{1})
-        
+        ttemp = strcat('../trained_model/fbpconvnet_standalone/net-epoch-101.mat');
+        load(ttemp);         
         %%%%%%%%%%%%%%%% load test data here %%%%%%%%%%%%%%%%%%%
-        
-        
-        
+    	%datafolder = "/home/share/MayoData_gen";  % this will be changed by users
+
+        load([datafolder patient{1} '/full_3mm_img.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/xfbp.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/sino.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/wi.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/denom.mat']);
+        load([datafolder patient{1} '/sim_low_nufft_1e4/kappa.mat']);    
+                
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
-        lab_n = reshape(lab_n, W, W, 1, []);
-        lab_d = reshape(lab_d, W, W, 1, []);
+        lab_n = reshape(xfdk, W, W, 1, []); % true
+        lab_d = reshape(xfbp, W, W, 1, []); % fbp
 
         cmode='gpu'; % 'cpu'
         if strcmp(cmode,'gpu')
@@ -65,8 +74,8 @@ for sample = [20,50,100,150,200]
         display(['avg SNR (FBP) : ' num2str(mean(avg_psnr_m))])
         display(['avg SNR (FBPconvNet) : ' num2str(mean(avg_psnr_rec))])
         
-       save(sprintf('FBPConvNet_%sSlice%d_dose1e4.mat', ...
-           patient{1},sample),'info');
+       %save(sprintf('FBPConvNet_%sSlice%d_dose1e4.mat', ...
+       %    patient{1},sample),'info');
         
         x_record(:,:,slice_index) = rec;
         x_true(:,:,slice_index) = gt;
@@ -76,5 +85,5 @@ for sample = [20,50,100,150,200]
         slice_index = slice_index + 1;
     end
 end
-summary = struct('x_record',x_record,'x_true',x_true,'value',value);
+%summary = struct('x_record',x_record,'x_true',x_true,'value',value);
 
