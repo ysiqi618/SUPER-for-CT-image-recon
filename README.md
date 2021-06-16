@@ -5,6 +5,7 @@
 ## Trained models 
 The pre-trained ULTRA model, trained models of SUPER-WRN-EP, SUPER-WRN-ULTRA, seq-WRN, and the standalone WavResNet are included in the root folder "trained_model".
 
+SUPER models with FBPConvNet can be downloaded from https://drive.google.com/drive/folders/1dXFUBTtjIMki43dNuAU6_bbiHqtYig91 .
 ## Data
 We used 3mm thickness images from "2016 NIH AAPM-Mayo Clinic Low Dose CT Grand Challenge" data (https://www.aapm.org/grandchallenge/lowdosect/#patientData) in our experiments. 
 - The code to extract regular-dose images from the dataset is given in 'data/read_mayo_IMA.m'. 
